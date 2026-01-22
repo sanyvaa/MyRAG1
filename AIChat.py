@@ -13,16 +13,19 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 load_dotenv()
 
+CHROMA_PATH = "chroma"
+embedding_function = get_embedding_function()
+db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
+
+def get_first_db_dir_name():
+    doc = db.get()["metadatas"][0]
+    doc_name = doc["source"]
+    path_name = os.path.basename(os.path.dirname(doc_name))
+    chunks_num = len(db.get()["ids"])
+    return path_name, chunks_num
 
 def get_context_from_RAG_DB(user_question: str, depth):
-    
-    CHROMA_PATH = "chroma"
-    embedding_function = get_embedding_function()
-    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
-
-    # Search the DB.
     results = db.similarity_search_with_score(user_question, k=depth)
-
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     return context_text, sources
@@ -49,8 +52,11 @@ def get_AI_response(user_question, context, modelname):
         "context" : context
         })
 
-st.set_page_config(layout="wide", page_title="TestSuite AI Chat")
+st.set_page_config(layout="wide", page_title="TestSuite AI Chat", page_icon="./MtsIcon.ico")
 st.title("TestSuite AI Chat")
+path_name, chunks_num = get_first_db_dir_name()
+st.markdown(":yellow[TestSuite documentation bundle name: " + str(path_name) +
+            ". Number of chunks in database: "  + str(chunks_num) + ".]")
 
 with st.container():
     col1, col2, col3, col4 = st.columns([1, 2, 3, 4])
@@ -58,16 +64,17 @@ with st.container():
     with col1:
         model_names = [ 
             "llama3.2", 
+            "granite3.2-vision",
             "deepseek-r1:1.5b",
             "qwen3-vl:4b",  ]
         model_name = st.selectbox( "Select LLM:",  model_names, width=400)
 
     with col2:
-        show_refs = st.checkbox("Show references in response")
+       depth = st.slider( "Search depth",  min_value=1,  max_value=100,  value=10,  step=1, width=200) 
 
     with col3:
-       depth = st.slider( "Search depth",  min_value=1,  max_value=100,  value=10,  step=10, width=200)
-
+       show_refs = st.checkbox("Show references in response", width=200)
+       
     with col4:
         clearButton = st.button("Clear the chat window")
         if clearButton:
@@ -96,8 +103,7 @@ if user_question:
 
         st.session_state.messages.append(HumanMessage(content=user_question))
 
-    llm_emojies = ['🎅', '🦖', "💀" ]
-    with st.chat_message("AI", avatar=llm_emojies[1]):
+    with st.chat_message("AI", avatar='💭'):
 
         context, sources = get_context_from_RAG_DB(user_question, depth)
         
