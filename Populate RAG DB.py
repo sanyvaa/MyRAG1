@@ -33,7 +33,7 @@ def bs4_extractor(html: str) -> str:
     return re.sub(r"\n\n+", "\n\n", soup.text).strip()
 
 
-def load_documents() -> list[Document]:
+def load_documents():
     
     py_files = list(Path('C:/MTS TestSuite Documentation/020_Landmark_TestLine_MPE').rglob("*.htm"))
     docs = [Document]
