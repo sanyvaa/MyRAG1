@@ -10,6 +10,7 @@ from get_embedding_function import get_embedding_function
 from langchain_chroma import Chroma
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
@@ -44,7 +45,13 @@ def get_AI_response(user_question, context, modelname):
         """
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
 
-    llm = init_chat_model(modelname, model_provider=os.getenv("MODEL_PROVIDER"), temperature=0)
+    if modelname != "gpt-4o-mini":
+        model_provider = "ollama"
+    else:
+        model_provider = "openai"
+
+    llm = init_chat_model(modelname, model_provider=model_provider, temperature=0)
+    #llm = ChatOpenAI()
 
     chain = prompt_template | llm | StrOutputParser()
     return chain.stream({
@@ -58,24 +65,44 @@ path_name, chunks_num = get_first_db_dir_name()
 st.markdown(":yellow[TestSuite documentation bundle name: " + str(path_name) +
             ". Number of chunks in database: "  + str(chunks_num) + ".]")
 
+
+
 with st.container():
-    col1, col2, col3, col4 = st.columns([1, 2, 3, 4])
+    
+    col1, col2, col3, col4, col5 = st.columns(5, gap="small", vertical_alignment="top", border=False)
 
     with col1:
-        model_names = [ 
+        llm_providers = [ 
+            "Ollama (local models)", 
+            "OpenAI (Chat GPT)"]
+        llm_provider = st.selectbox( "Select LLM provider:",  llm_providers, width=600)
+
+    with col2:
+        model_names_ollama = [ 
             "llama3.2", 
             "granite3.2-vision",
             "deepseek-r1:1.5b",
-            "qwen3-vl:4b",  ]
-        model_name = st.selectbox( "Select LLM:",  model_names, width=400)
+            "qwen3-vl:4b"  
+            ]
 
-    with col2:
-       depth = st.slider( "Search depth",  min_value=1,  max_value=100,  value=10,  step=1, width=200) 
+        model_names_gpt = [ 
+            "gpt-4o-mini"
+            ]
+
+        if llm_provider.startswith("Ollama"):
+            model_names = model_names_ollama
+        else: 
+            model_names = model_names_gpt
+        model_name = st.selectbox( "Select LLM:",  model_names)
+
 
     with col3:
+       depth = st.slider( "Search depth",  min_value=1,  max_value=100,  value=10,  step=1) 
+
+    with col4:
        show_refs = st.checkbox("Show references in response", width=200)
        
-    with col4:
+    with col5:
         clearButton = st.button("Clear the chat window")
         if clearButton:
             st.session_state.messages=[]
