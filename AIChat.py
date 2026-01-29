@@ -10,7 +10,7 @@ from get_embedding_function import get_embedding_function
 from langchain_chroma import Chroma
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_openai import ChatOpenAI
+#from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
@@ -31,7 +31,7 @@ def get_context_from_RAG_DB(user_question: str, depth):
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     return context_text, sources
 
-def get_AI_response(user_question, context, modelname):
+def get_AI_response(user_question, context, llm_provider, modelname):
     PROMPT_TEMPLATE = """
         User Question: {user_question}
 
@@ -45,12 +45,7 @@ def get_AI_response(user_question, context, modelname):
         """
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
 
-    if modelname != "gpt-4o-mini":
-        model_provider = "ollama"
-    else:
-        model_provider = "openai"
-
-    llm = init_chat_model(modelname, model_provider=model_provider, temperature=0)
+    llm = init_chat_model(modelname, model_provider=llm_provider, temperature=0)
     #llm = ChatOpenAI()
 
     chain = prompt_template | llm | StrOutputParser()
@@ -72,10 +67,29 @@ with st.container():
     col1, col2, col3, col4, col5 = st.columns(5, gap="small", vertical_alignment="top", border=False)
 
     with col1:
-        llm_providers = [ 
-            "Ollama (local models)", 
-            "OpenAI (Chat GPT)"]
-        llm_provider = st.selectbox( "Select LLM provider:",  llm_providers, width=600)
+            #Supported model providers are: 
+            #anthropic, azure_ai, azure_openai, bedrock, bedrock_converse, cohere, deepseek, fireworks, 
+            #google_anthropic_vertex, google_genai, google_vertexai, groq, huggingface, ibm, mistralai, 
+            #nvidia, ollama, openai, perplexity, together, upstage, xai
+        llm_providers = {
+            "ollama": "Ollama local models", 
+            "openai": "$ Opean AI", 
+            "google_genai": "$ Google",
+            "anthropic": "$ Anthropic",
+            "mistralai": "$ Mistral"
+            }
+       
+        def format_func(option):
+            return llm_providers[option]
+        
+#        llm_providers = [ 
+#            "ollama", 
+#            "openai",
+#            "google_genai",
+#            "anthropic",
+#            "mistralai"
+#            ]
+        llm_provider = st.selectbox( "Select LLM provider:",  options=list(llm_providers.keys()), format_func=format_func, width=400)
 
     with col2:
         model_names_ollama = [ 
@@ -88,11 +102,34 @@ with st.container():
         model_names_gpt = [ 
             "gpt-4o-mini"
             ]
+        
+        model_names_google = [ 
+            "gemini-3-pro-preview"
+            ]
+        
+        model_names_anthropic = [ 
+            "Claude Haiku 3"
+            ]
 
-        if llm_provider.startswith("Ollama"):
+        model_names_mistral = [ 
+            "mistral-medium-latest",
+            "magistral-small-2509",
+            "ministral-8b-latest"
+            ]
+
+        if llm_provider.startswith("ollama"):
             model_names = model_names_ollama
-        else: 
+        elif llm_provider.startswith("openai"): 
             model_names = model_names_gpt
+        elif llm_provider.startswith("google"): 
+            model_names = model_names_google
+        elif llm_provider.startswith("anthropic"): 
+            model_names = model_names_anthropic
+        elif llm_provider.startswith("mistral"): 
+            model_names = model_names_mistral            
+        else:  
+            model_names = ["<select LLM  provider>"]    
+        
         model_name = st.selectbox( "Select LLM:",  model_names)
 
 
@@ -136,7 +173,7 @@ if user_question:
         
         st.markdown(model_name + "  (depth " + str(depth) + ")" + "  is answering...")
         start_time = time.time()
-        ai_response = st.write_stream(get_AI_response(user_question, context, model_name))
+        ai_response = st.write_stream(get_AI_response(user_question, context, llm_provider, model_name))
         st.session_state.messages.append(AIMessage(content= ai_response))
 
         end_time = time.time()

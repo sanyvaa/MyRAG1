@@ -1,6 +1,7 @@
 what is mpe?
 how to activate license?
 list all activities available in TestSuite Procedure. present them as numbered list +++
+what is Cycle activity? +
 what is Cycle+DAQ activity?
 what are the properties of Cycle+DAQ Activity? +
 list all advanced settings of Cycle+DAQ Activity ++
@@ -9,3 +10,7 @@ list Group Activity Properties +++
 what is Variables Used in Group activity? ++
 how to create snippet?
 what are MTS Snippets? +
+what is variable availability? +
+what are Variable Availability values? ++
+list all Variable Availability Property items +++
+how to create python function?
