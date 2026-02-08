@@ -10,7 +10,9 @@ from get_embedding_function import get_embedding_function
 from langchain_chroma import Chroma
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-#from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI
+import multiprocessing
+from langchain_community.chat_models import ChatLlamaCpp
 
 load_dotenv()
 
@@ -45,8 +47,17 @@ def get_AI_response(user_question, context, llm_provider, modelname):
         """
     prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
 
-    llm = init_chat_model(modelname, model_provider=llm_provider, temperature=0)
-    #llm = ChatOpenAI()
+    if(llm_provider == 'llama.cpp'):
+        llm = ChatOpenAI(
+            temperature=0,
+            model_name=model_name, # Model name is arbitrary for local server
+            openai_api_base="http://127.0.0.1:8080",
+            openai_api_key="OPENAI_API_KEY",
+            streaming=True,
+            #       callback_manager=callback_manager,
+        )
+    else:
+        llm = init_chat_model(modelname, model_provider=llm_provider, temperature=0)
 
     chain = prompt_template | llm | StrOutputParser()
     return chain.stream({
@@ -73,6 +84,7 @@ with st.container():
             #nvidia, ollama, openai, perplexity, together, upstage, xai
         llm_providers = {
             "ollama": "Ollama local models", 
+            "llama.cpp": "Llama.cpp local models",
             "openai": "$ Opean AI", 
             "google_genai": "$ Google",
             "anthropic": "$ Anthropic",
@@ -82,13 +94,6 @@ with st.container():
         def format_func(option):
             return llm_providers[option]
         
-#        llm_providers = [ 
-#            "ollama", 
-#            "openai",
-#            "google_genai",
-#            "anthropic",
-#            "mistralai"
-#            ]
         llm_provider = st.selectbox( "Select LLM provider:",  options=list(llm_providers.keys()), format_func=format_func, width=400)
 
     with col2:
@@ -97,6 +102,12 @@ with st.container():
             "granite3.2-vision",
             "deepseek-r1:1.5b",
             "qwen3-vl:4b"  
+            ]
+        
+        model_names_llamacpp = [ 
+            "Hermes-2-Pro-Llama-3-8B-Q4_K_M",
+            "ggml-org/Step-3.5-Flash-GGUF",
+            "ggml-org/gemma-3-4b-it-GGUF:Q4_K_M"
             ]
 
         model_names_gpt = [ 
@@ -119,6 +130,8 @@ with st.container():
 
         if llm_provider.startswith("ollama"):
             model_names = model_names_ollama
+        elif llm_provider.startswith("llama.cpp"):
+            model_names = model_names_llamacpp         
         elif llm_provider.startswith("openai"): 
             model_names = model_names_gpt
         elif llm_provider.startswith("google"): 

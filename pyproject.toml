@@ -18,5 +18,9 @@ dependencies = [
     "langchain-mistralai>=1.1.1",
     "langchain-ollama>=1.0.1",
     "langchain-openai>=1.1.7",
+    "llama-cpp-python>=0.3.16",
+    "lxml>=6.0.2",
+    "open-clip-torch>=3.2.0",
+    "pydantic>=2.12.5",
     "streamlit>=1.53.0",
 ]
