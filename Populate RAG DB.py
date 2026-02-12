@@ -22,7 +22,7 @@ def main():
   
     #clear_database()
     # Create (or update) the data store.
-    documents = load_images()
+    documents = load_documents()
     #chunks = split_documents(doc)
     #add_to_chroma(chunks)
 
@@ -35,28 +35,6 @@ def bs4_extractor(html: str) -> str:
     #soup = BeautifulSoup(html, "html.parser")
     return re.sub(r"\n\n+", "\n\n", soup.text).strip()
 
-
-def extract_image_sources(html_file_path):
-
-#    embedding_function = OpenCLIPEmbeddingFunction()
-    data_loader = ImageLoader()
-
-
-#    client = chromadb.PersistentClient(path=CHROMA_PATH)
-#    collection = client.create_collection(name='multimodal_collection',
-#        embedding_function=embedding_function,  data_loader=data_loader)
-
-    with open(html_file_path, 'r', encoding='utf-8') as f:
-        soup = BeautifulSoup(f.read(), 'html.parser')
-    
-    image_sources = []
-    for img_tag in soup.find_all('img'):
-        src = img_tag.get('src')
-        if src:
-            image_sources.append(src)
-    return image_sources
-
-def load_images():
 
     client = chromadb.PersistentClient(path=str("chroma_images"))
     data_loader = ImageLoader()

@@ -1,0 +1,11 @@
+# == OPENAI == #
+OPENAI_API_KEY='sk-xxxx'
+
+# == ANTHROPIC == #
+ANTHROPIC_API_KEY = "sk-xxxx"
+
+# == GOOGLE == #
+GEMINI_API_KEY='xxxx'
+
+# == MISTRAL == #
+MISTRAL_API_KEY='xxxx'

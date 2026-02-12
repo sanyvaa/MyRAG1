@@ -2,6 +2,8 @@
 env
 uv.lock
 venv
+.venv
 __pycache__/
 chroma/chroma.sqlite3
 chroma/
+
