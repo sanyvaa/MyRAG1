@@ -5,7 +5,7 @@ import streamlit as st
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 #from QueryRAG_Data import get_context_from_RAG_DB
-from get_models import get_main_model_name
+from get_models import get_embedding_model_name, get_main_model_name
 from get_embedding_function import get_embedding_function
 from langchain_chroma import Chroma
 from langchain.chat_models import init_chat_model
@@ -13,6 +13,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
 import multiprocessing
 from langchain_community.chat_models import ChatLlamaCpp
+import requests
 
 load_dotenv()
 
@@ -32,6 +33,17 @@ def get_context_from_RAG_DB(user_question: str, depth):
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
     sources = [doc.metadata.get("id", None) for doc, _score in results]
     return context_text, sources
+
+def get_ollama_models() -> list:
+    thelist = requests.get("http://localhost:11434/api/tags")
+    jsondata = thelist.json()
+    result = list()
+
+    for model in jsondata["models"]:
+        if not model["model"].startswith(get_embedding_model_name()):
+            result.append(model["model"])
+
+    return sorted(result)
 
 def get_AI_response(user_question, context, llm_provider, modelname):
     PROMPT_TEMPLATE = """
@@ -101,7 +113,8 @@ with st.container():
             "llama3.2", 
             "granite3.2-vision",
             "deepseek-r1:1.5b",
-            "qwen3-vl:4b"  
+            "qwen3-vl:4b",
+            "gemma3:4b" 
             ]
         
         model_names_llamacpp = [ 
@@ -129,7 +142,7 @@ with st.container():
             ]
 
         if llm_provider.startswith("ollama"):
-            model_names = model_names_ollama
+            model_names = get_ollama_models()
         elif llm_provider.startswith("llama.cpp"):
             model_names = model_names_llamacpp         
         elif llm_provider.startswith("openai"): 
@@ -197,9 +210,3 @@ if user_question:
             st.markdown("\n\n References: \n\n")
             st.markdown(sources)
         
-
-
-
-
-
-

@@ -26,7 +26,7 @@
     # Create virtual environment
     https://code.visualstudio.com/docs/python/python-tutorial
 
-    # add uv package installer (more effictive than pip)    
+    # add uv package installer (more effective than pip)    
     pip install uv
 
     #install packages from pyproject.toml
